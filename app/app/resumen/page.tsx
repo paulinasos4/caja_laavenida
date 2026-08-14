@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { formatearPesos, formatearFechaCorta as formatearFecha, mesLabel } from "@/lib/format";
 import styles from "./page.module.css";
 
 type Cierre = {
@@ -8,21 +9,6 @@ type Cierre = {
   efectivo: number;
   debito: number;
 };
-
-function formatearFecha(fecha: string) {
-  const [y, m, d] = fecha.split("-");
-  return `${d}/${m}/${y}`;
-}
-
-function formatearPesos(n: number) {
-  return n.toLocaleString("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 });
-}
-
-function mesLabel(fecha: string) {
-  const [y, m] = fecha.split("-");
-  const meses = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
-  return `${meses[Number(m) - 1]} ${y}`;
-}
 
 export default function ResumenPage() {
   const [cierres, setCierres] = useState<Cierre[]>([]);

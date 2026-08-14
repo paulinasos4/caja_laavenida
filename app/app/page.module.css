@@ -1,0 +1,139 @@
+.main {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 20px 16px 32px;
+}
+
+.header {
+  margin-bottom: 20px;
+}
+
+.title {
+  font-size: 1.375rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.welcome {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 16px;
+  padding: 4px;
+}
+
+.store {
+  font-size: 2.25rem;
+  line-height: 1;
+}
+
+.welcomeTitle {
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+
+.welcomeText {
+  color: #666;
+  font-size: 0.9375rem;
+}
+
+.dateCard {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: #eaf3ec;
+  border: 1px solid #d6e8da;
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 24px;
+}
+
+.dateIcon {
+  font-size: 1.75rem;
+}
+
+.dateLabel {
+  color: #4a7a54;
+  font-size: 0.8125rem;
+}
+
+.dateValue {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #1e5128;
+}
+
+.dateDay {
+  color: #4a7a54;
+  font-size: 0.875rem;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.access {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: white;
+  border: 1px solid #eee;
+  border-radius: 16px;
+  padding: 24px 12px;
+  text-decoration: none;
+  color: #1a1a1a;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.05);
+  transition: transform 0.12s, box-shadow 0.12s;
+}
+
+.access:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
+}
+
+.accessIcon {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+}
+
+.accessIcon svg {
+  width: 26px;
+  height: 26px;
+}
+
+.accessLabel {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+/* ===== Desktop ===== */
+@media (min-width: 768px) {
+  .main {
+    max-width: 1000px;
+    padding: 32px 40px;
+  }
+
+  .title {
+    text-align: left;
+    font-size: 1.75rem;
+  }
+
+  .grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+  }
+
+  .access {
+    padding: 32px 16px;
+  }
+}

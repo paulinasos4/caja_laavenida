@@ -1,19 +1,13 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
+import { hoyISO, formatearFechaLarga } from "@/lib/format";
 import styles from "./page.module.css";
 
-function hoyISO() {
-  return new Date().toLocaleDateString("en-CA", { timeZone: "America/Argentina/Buenos_Aires" });
-}
-
+// En la landing la fecha se muestra sin el año, ej. "24 de mayo".
 function formatearFecha(fecha: string) {
-  const [, m, d] = fecha.split("-").map(Number);
-  const meses = [
-    "enero", "febrero", "marzo", "abril", "mayo", "junio",
-    "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre",
-  ];
-  return `${d} de ${meses[m - 1]}`;
+  return formatearFechaLarga(fecha).replace(/ de \d{4}$/, "");
 }
 
 export default function CargarPage() {
@@ -87,6 +81,10 @@ export default function CargarPage() {
         </form>
 
         {guardado && <p className={styles.ok}>✓ Guardado</p>}
+
+        <Link href="/app" className={styles.panelLink}>
+          Ir al panel →
+        </Link>
       </div>
     </main>
   );

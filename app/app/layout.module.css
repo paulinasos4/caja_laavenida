@@ -1,0 +1,30 @@
+.shell {
+  min-height: 100dvh;
+  background: #f5f5f5;
+  position: relative;
+  z-index: 1;
+}
+
+/* Tapa el fondo global (foto de la fachada) dentro de toda la app.
+   El template Control Super usa fondo limpio, no la foto. */
+.shell::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: #f5f5f5;
+}
+
+/* Mobile: deja lugar abajo para la barra de navegación */
+.content {
+  padding-bottom: calc(72px + env(safe-area-inset-bottom));
+}
+
+/* Desktop: deja lugar a la izquierda para el sidebar */
+@media (min-width: 768px) {
+  .content {
+    margin-left: 240px;
+    padding-bottom: 0;
+    min-height: 100dvh;
+  }
+}

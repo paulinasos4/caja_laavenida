@@ -78,3 +78,19 @@
   color: #2d7a3a;
   font-weight: 600;
 }
+
+.panelLink {
+  display: block;
+  text-align: center;
+  margin-top: 24px;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #2d7a3a;
+  text-decoration: none;
+  opacity: 0.8;
+}
+
+.panelLink:hover {
+  opacity: 1;
+  text-decoration: underline;
+}
