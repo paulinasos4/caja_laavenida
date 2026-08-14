@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { parseProductosCSV } from "@/lib/csv";
+import { parseProductosCSV, leerArchivoTexto } from "@/lib/csv";
 import styles from "./page.module.css";
 
 type Producto = {
@@ -83,7 +83,7 @@ export default function ProductosPage() {
     setAviso(null);
     setOcupado(true);
     try {
-      const texto = await file.text();
+      const texto = await leerArchivoTexto(file);
       const resultado = parseProductosCSV(texto);
 
       // No se pudo extraer la columna "Producto": avisamos y NO importamos nada.

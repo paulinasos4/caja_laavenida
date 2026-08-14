@@ -13,6 +13,28 @@ export type ResultadoCSV =
   | { ok: true; nombres: string[] }
   | { ok: false; motivo: "sin-columna" | "vacio"; columnas: string[] };
 
+/**
+ * Lee un archivo de texto detectando el encoding.
+ *
+ * Los exports de sistemas de venta / Excel suelen venir en Latin-1
+ * (ISO-8859-1), no en UTF-8. Si se leen como UTF-8 los acentos se rompen
+ * (ej. "más" -> "mÃ¡s"). Probamos UTF-8 y, si aparecen señales de mojibake,
+ * reintentamos como Latin-1 (windows-1252).
+ */
+export async function leerArchivoTexto(file: File): Promise<string> {
+  const buffer = await file.arrayBuffer();
+
+  const utf8 = new TextDecoder("utf-8").decode(buffer);
+  // Señales de que en realidad era Latin-1: el carácter de reemplazo (�)
+  // o las secuencias típicas "Ã", "Â" que deja Latin-1 leído como UTF-8.
+  const pareceRoto = utf8.includes("�") || /Ã.|Â./.test(utf8);
+
+  if (pareceRoto) {
+    return new TextDecoder("windows-1252").decode(buffer);
+  }
+  return utf8;
+}
+
 // Nombres de encabezado que aceptamos para la columna de productos.
 const NOMBRES_COLUMNA = ["producto", "productos"];
 
@@ -71,7 +93,11 @@ function detectarSeparador(headerLine: string): string {
 }
 
 export function parseProductosCSV(texto: string): ResultadoCSV {
-  const lineas = texto
+  // Quita el BOM inicial (aparece en exports de Excel/sistemas) que si no
+  // se pega a la primera celda y rompe la comparación de encabezados.
+  const limpio = texto.replace(/^﻿/, "");
+
+  const lineas = limpio
     .split(/\r?\n/)
     .map((l) => l.trim())
     .filter((l) => l.length > 0);
@@ -80,27 +106,43 @@ export function parseProductosCSV(texto: string): ResultadoCSV {
     return { ok: false, motivo: "vacio", columnas: [] };
   }
 
-  const sep = detectarSeparador(lineas[0]);
-  const encabezados = parsearLinea(lineas[0], sep);
+  // El header puede NO estar en la primera línea: muchos exports traen
+  // un título y filas en blanco arriba. Buscamos la primera fila que
+  // tenga una columna "Producto".
+  let indiceFila = -1;
+  let indiceCol = -1;
+  let sep = ";";
 
-  // Busca el índice de la columna "Producto".
-  const indice = encabezados.findIndex((h) =>
-    NOMBRES_COLUMNA.includes(normalizar(h))
-  );
-
-  if (indice === -1) {
-    return { ok: false, motivo: "sin-columna", columnas: encabezados };
+  for (let i = 0; i < lineas.length; i++) {
+    const sepLinea = detectarSeparador(lineas[i]);
+    const campos = parsearLinea(lineas[i], sepLinea);
+    const col = campos.findIndex((h) => NOMBRES_COLUMNA.includes(normalizar(h)));
+    if (col !== -1) {
+      indiceFila = i;
+      indiceCol = col;
+      sep = sepLinea;
+      break;
+    }
   }
 
-  // Extrae esa columna de cada fila de datos (saltando el header).
+  if (indiceFila === -1) {
+    // No hay header con "Producto". Devolvemos las columnas de la primera
+    // línea con contenido para poder mostrar un aviso útil.
+    const columnas = parsearLinea(lineas[0], detectarSeparador(lineas[0]));
+    return { ok: false, motivo: "sin-columna", columnas };
+  }
+
+  // Extrae la columna "Producto" de cada fila DESPUÉS del header.
   const vistos = new Set<string>();
   const nombres: string[] = [];
 
-  for (let i = 1; i < lineas.length; i++) {
+  for (let i = indiceFila + 1; i < lineas.length; i++) {
     const campos = parsearLinea(lineas[i], sep);
-    const valor = (campos[indice] ?? "").trim();
+    const valor = (campos[indiceCol] ?? "").trim();
     if (!valor) continue;
 
+    // Descarta filas de "totales"/parámetros del pie del export:
+    // suelen tener la celda de producto vacía o texto que no es un producto.
     const clave = valor.toLowerCase();
     if (vistos.has(clave)) continue;
     vistos.add(clave);
