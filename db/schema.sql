@@ -4,5 +4,3 @@ create table if not exists cierres (
   debito numeric not null default 0,
   created_at timestamptz default now()
 );
-
-alter table cierres enable row level security;

@@ -1,4 +1,4 @@
-import { getSupabase } from "./supabase";
+import { neon } from "@neondatabase/serverless";
 
 export type Cierre = {
   fecha: string;
@@ -6,42 +6,42 @@ export type Cierre = {
   debito: number;
 };
 
+function getSql() {
+  const url = process.env.POSTGRES_URL;
+  if (!url) throw new Error("Falta POSTGRES_URL");
+  return neon(url);
+}
+
 export async function getCierres(): Promise<Cierre[]> {
-  const supabase = getSupabase();
-  const { data, error } = await supabase
-    .from("cierres")
-    .select("fecha, efectivo, debito")
-    .order("fecha", { ascending: false });
+  const sql = getSql();
+  const rows = await sql`
+    SELECT fecha, efectivo, debito
+    FROM cierres
+    ORDER BY fecha DESC
+  `;
 
-  if (error) throw error;
-
-  return (data ?? []).map((c) => ({
-    fecha: c.fecha,
+  return rows.map((c) => ({
+    fecha: String(c.fecha),
     efectivo: Number(c.efectivo),
     debito: Number(c.debito),
   }));
 }
 
 export async function saveCierre(cierre: Cierre): Promise<Cierre> {
-  const supabase = getSupabase();
-  const { data, error } = await supabase
-    .from("cierres")
-    .upsert(
-      {
-        fecha: cierre.fecha,
-        efectivo: cierre.efectivo,
-        debito: cierre.debito,
-      },
-      { onConflict: "fecha" }
-    )
-    .select("fecha, efectivo, debito")
-    .single();
+  const sql = getSql();
+  const rows = await sql`
+    INSERT INTO cierres (fecha, efectivo, debito)
+    VALUES (${cierre.fecha}, ${cierre.efectivo}, ${cierre.debito})
+    ON CONFLICT (fecha) DO UPDATE SET
+      efectivo = EXCLUDED.efectivo,
+      debito = EXCLUDED.debito
+    RETURNING fecha, efectivo, debito
+  `;
 
-  if (error) throw error;
-
+  const row = rows[0];
   return {
-    fecha: data.fecha,
-    efectivo: Number(data.efectivo),
-    debito: Number(data.debito),
+    fecha: String(row.fecha),
+    efectivo: Number(row.efectivo),
+    debito: Number(row.debito),
   };
 }
