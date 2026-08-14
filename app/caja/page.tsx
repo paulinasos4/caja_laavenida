@@ -82,8 +82,8 @@ export default function CargarPage() {
 
         {guardado && <p className={styles.ok}>✓ Guardado</p>}
 
-        <Link href="/app" className={styles.panelLink}>
-          Ir al panel →
+        <Link href="/" className={styles.panelLink}>
+          ← Volver al panel
         </Link>
       </div>
     </main>

@@ -7,7 +7,7 @@ import styles from "./page.module.css";
 
 const accesos = [
   {
-    href: "/",
+    href: "/caja",
     label: "Cerrar caja",
     color: "#2d7a3a",
     icon: (
@@ -18,7 +18,7 @@ const accesos = [
     ),
   },
   {
-    href: "/app/facturas",
+    href: "/facturas",
     label: "Cargar factura",
     color: "#2f6fb0",
     icon: (
@@ -29,7 +29,7 @@ const accesos = [
     ),
   },
   {
-    href: "/app/facturas",
+    href: "/facturas",
     label: "Registrar gasto",
     color: "#e07a2f",
     icon: (
@@ -40,7 +40,7 @@ const accesos = [
     ),
   },
   {
-    href: "/app/productos",
+    href: "/productos",
     label: "Ver productos",
     color: "#7a4fb0",
     icon: (

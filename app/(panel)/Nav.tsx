@@ -12,7 +12,7 @@ type Item = {
 
 const items: Item[] = [
   {
-    href: "/app",
+    href: "/",
     label: "Inicio",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -22,7 +22,7 @@ const items: Item[] = [
     ),
   },
   {
-    href: "/app/facturas",
+    href: "/facturas",
     label: "Facturas",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -32,7 +32,7 @@ const items: Item[] = [
     ),
   },
   {
-    href: "/app/productos",
+    href: "/productos",
     label: "Productos",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -42,22 +42,13 @@ const items: Item[] = [
       </svg>
     ),
   },
-  {
-    href: "/app/resumen",
-    label: "Resumen",
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M4 20V10M10 20V4M16 20v-7M22 20H2" />
-      </svg>
-    ),
-  },
 ];
 
 export default function Nav() {
   const pathname = usePathname();
 
   function activo(href: string) {
-    if (href === "/app") return pathname === "/app";
+    if (href === "/") return pathname === "/";
     return pathname.startsWith(href);
   }
 
