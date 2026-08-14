@@ -53,3 +53,57 @@
 .total {
   font-weight: 600;
 }
+
+.estado {
+  color: #666;
+  margin-bottom: 16px;
+}
+
+.acciones {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.btn,
+.btnSec,
+.btnDanger {
+  border: none;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btn:disabled,
+.btnSec:disabled,
+.btnDanger:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.btn {
+  background: #2d7a3a;
+  color: white;
+}
+
+.btnSec {
+  background: #eee;
+  color: #333;
+}
+
+.btnDanger {
+  background: #fdeaea;
+  color: #c0392b;
+}
+
+.editInput {
+  width: 100px;
+  padding: 6px 8px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 0.9375rem;
+  text-align: right;
+}

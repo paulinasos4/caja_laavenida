@@ -26,12 +26,84 @@ function mesLabel(fecha: string) {
 
 export default function ResumenPage() {
   const [cierres, setCierres] = useState<Cierre[]>([]);
+  const [cargando, setCargando] = useState(true);
+  const [error, setError] = useState(false);
+
+  // Fila en edición (fecha) y valores del formulario inline.
+  const [editando, setEditando] = useState<string | null>(null);
+  const [editEfectivo, setEditEfectivo] = useState("");
+  const [editDebito, setEditDebito] = useState("");
+  const [ocupado, setOcupado] = useState(false);
+
+  async function cargar() {
+    setCargando(true);
+    setError(false);
+    try {
+      const r = await fetch("/api/cierres");
+      const data = await r.json();
+      // La API devuelve un array cuando anda; ante un error devuelve { error }.
+      // Guardamos solo si es array para no romper el .reduce/.map de abajo.
+      if (Array.isArray(data)) {
+        setCierres(data);
+      } else {
+        setError(true);
+      }
+    } catch {
+      setError(true);
+    } finally {
+      setCargando(false);
+    }
+  }
 
   useEffect(() => {
-    fetch("/api/cierres")
-      .then((r) => r.json())
-      .then(setCierres);
+    cargar();
   }, []);
+
+  function empezarEdicion(c: Cierre) {
+    setEditando(c.fecha);
+    setEditEfectivo(String(c.efectivo));
+    setEditDebito(String(c.debito));
+  }
+
+  function cancelarEdicion() {
+    setEditando(null);
+  }
+
+  async function guardarEdicion(fecha: string) {
+    setOcupado(true);
+    try {
+      const res = await fetch("/api/cierres", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fecha,
+          efectivo: Number(editEfectivo) || 0,
+          debito: Number(editDebito) || 0,
+        }),
+      });
+      if (res.ok) {
+        setEditando(null);
+        await cargar();
+      }
+    } finally {
+      setOcupado(false);
+    }
+  }
+
+  async function borrar(fecha: string) {
+    if (!confirm(`¿Borrar el cierre del ${formatearFecha(fecha)}?`)) return;
+    setOcupado(true);
+    try {
+      const res = await fetch(`/api/cierres?fecha=${encodeURIComponent(fecha)}`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        await cargar();
+      }
+    } finally {
+      setOcupado(false);
+    }
+  }
 
   const porMes = cierres.reduce<Record<string, { efectivo: number; debito: number; dias: number }>>(
     (acc, c) => {
@@ -46,6 +118,29 @@ export default function ResumenPage() {
   );
 
   const mesesOrdenados = Object.keys(porMes).sort((a, b) => b.localeCompare(a));
+
+  if (cargando) {
+    return (
+      <main className={styles.main}>
+        <h1 className={styles.title}>Resumen</h1>
+        <p className={styles.estado}>Cargando…</p>
+      </main>
+    );
+  }
+
+  if (error) {
+    return (
+      <main className={styles.main}>
+        <h1 className={styles.title}>Resumen</h1>
+        <p className={styles.estado}>
+          No se pudieron cargar los datos. Revisá la conexión a la base de datos.
+        </p>
+        <button className={styles.btn} onClick={cargar}>
+          Reintentar
+        </button>
+      </main>
+    );
+  }
 
   return (
     <main className={styles.main}>
@@ -93,17 +188,83 @@ export default function ResumenPage() {
                 <th>Efectivo</th>
                 <th>Débito</th>
                 <th>Total</th>
+                <th>Acciones</th>
               </tr>
             </thead>
             <tbody>
-              {cierres.map((c) => (
-                <tr key={c.fecha}>
-                  <td>{formatearFecha(c.fecha)}</td>
-                  <td>{formatearPesos(c.efectivo)}</td>
-                  <td>{formatearPesos(c.debito)}</td>
-                  <td className={styles.total}>{formatearPesos(c.efectivo + c.debito)}</td>
-                </tr>
-              ))}
+              {cierres.map((c) =>
+                editando === c.fecha ? (
+                  <tr key={c.fecha}>
+                    <td>{formatearFecha(c.fecha)}</td>
+                    <td>
+                      <input
+                        type="number"
+                        inputMode="decimal"
+                        value={editEfectivo}
+                        onChange={(e) => setEditEfectivo(e.target.value)}
+                        className={styles.editInput}
+                        autoComplete="off"
+                      />
+                    </td>
+                    <td>
+                      <input
+                        type="number"
+                        inputMode="decimal"
+                        value={editDebito}
+                        onChange={(e) => setEditDebito(e.target.value)}
+                        className={styles.editInput}
+                        autoComplete="off"
+                      />
+                    </td>
+                    <td className={styles.total}>
+                      {formatearPesos((Number(editEfectivo) || 0) + (Number(editDebito) || 0))}
+                    </td>
+                    <td>
+                      <div className={styles.acciones}>
+                        <button
+                          className={styles.btn}
+                          onClick={() => guardarEdicion(c.fecha)}
+                          disabled={ocupado}
+                        >
+                          Guardar
+                        </button>
+                        <button
+                          className={styles.btnSec}
+                          onClick={cancelarEdicion}
+                          disabled={ocupado}
+                        >
+                          Cancelar
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
+                  <tr key={c.fecha}>
+                    <td>{formatearFecha(c.fecha)}</td>
+                    <td>{formatearPesos(c.efectivo)}</td>
+                    <td>{formatearPesos(c.debito)}</td>
+                    <td className={styles.total}>{formatearPesos(c.efectivo + c.debito)}</td>
+                    <td>
+                      <div className={styles.acciones}>
+                        <button
+                          className={styles.btnSec}
+                          onClick={() => empezarEdicion(c)}
+                          disabled={ocupado}
+                        >
+                          Editar
+                        </button>
+                        <button
+                          className={styles.btnDanger}
+                          onClick={() => borrar(c.fecha)}
+                          disabled={ocupado}
+                        >
+                          Borrar
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                )
+              )}
             </tbody>
           </table>
         </div>

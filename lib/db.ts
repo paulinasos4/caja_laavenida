@@ -45,3 +45,8 @@ export async function saveCierre(cierre: Cierre): Promise<Cierre> {
     debito: Number(row.debito),
   };
 }
+
+export async function deleteCierre(fecha: string): Promise<void> {
+  const sql = getSql();
+  await sql`DELETE FROM cierres WHERE fecha = ${fecha}`;
+}

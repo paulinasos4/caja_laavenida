@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getCierres, saveCierre } from "@/lib/db";
+import { getCierres, saveCierre, deleteCierre } from "@/lib/db";
 
 export async function GET() {
   try {
@@ -28,5 +28,21 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(cierre);
   } catch {
     return NextResponse.json({ error: "Error al guardar" }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const fecha = request.nextUrl.searchParams.get("fecha");
+
+    if (!fecha) {
+      return NextResponse.json({ error: "Falta la fecha" }, { status: 400 });
+    }
+
+    await deleteCierre(fecha);
+
+    return NextResponse.json({ ok: true });
+  } catch {
+    return NextResponse.json({ error: "Error al borrar" }, { status: 500 });
   }
 }
