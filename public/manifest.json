@@ -1,0 +1,10 @@
+{
+  "name": "Caja La Avenida",
+  "short_name": "Caja",
+  "description": "Cierre de caja diario",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f5f5f5",
+  "theme_color": "#2d7a3a",
+  "lang": "es-AR"
+}
