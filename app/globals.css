@@ -19,6 +19,9 @@ body::before {
   inset: 0;
   z-index: -2;
   background: url("/fondo.png") center / cover no-repeat;
+  filter: blur(6px);
+  /* Compensa el borde claro que deja el blur */
+  transform: scale(1.06);
 }
 
 /* Capa oscura para que el texto se lea bien */
