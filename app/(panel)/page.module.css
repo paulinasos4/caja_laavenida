@@ -12,6 +12,8 @@
   font-size: 1.375rem;
   font-weight: 700;
   text-align: center;
+  color: white;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
 }
 
 .welcome {
@@ -27,25 +29,29 @@
   line-height: 1;
 }
 
+.welcomeText {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.9375rem;
+}
+
 .welcomeTitle {
   font-size: 1.125rem;
   font-weight: 700;
-}
-
-.welcomeText {
-  color: #666;
-  font-size: 0.9375rem;
+  color: white;
 }
 
 .dateCard {
   display: flex;
   align-items: center;
   gap: 14px;
-  background: #eaf3ec;
-  border: 1px solid #d6e8da;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
   border-radius: 14px;
   padding: 16px;
   margin-bottom: 24px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
 }
 
 .dateIcon {
@@ -80,13 +86,15 @@
   align-items: center;
   justify-content: center;
   gap: 12px;
-  background: white;
-  border: 1px solid #eee;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
   border-radius: 16px;
   padding: 24px 12px;
   text-decoration: none;
   color: #1a1a1a;
-  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
   transition: transform 0.12s, box-shadow 0.12s;
 }
 

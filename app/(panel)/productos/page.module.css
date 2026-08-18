@@ -14,6 +14,8 @@
 .title {
   font-size: 1.375rem;
   font-weight: 700;
+  color: white;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
 }
 
 .count {

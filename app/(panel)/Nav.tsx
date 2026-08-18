@@ -56,7 +56,7 @@ export default function Nav() {
     <nav className={styles.nav}>
       <div className={styles.brand}>
         <span className={styles.brandMark}>🛒</span>
-        <span className={styles.brandName}>Control Super</span>
+        <span className={styles.brandName}>La Avenida</span>
       </div>
 
       <ul className={styles.list}>

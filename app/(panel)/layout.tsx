@@ -8,6 +8,7 @@ export default function AppLayout({
 }) {
   return (
     <div className={styles.shell}>
+      <p className={styles.mobileBrand}>La Avenida</p>
       <Nav />
       <div className={styles.content}>{children}</div>
     </div>

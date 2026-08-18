@@ -45,9 +45,6 @@ export default function CargarPage() {
 
   return (
     <main className={styles.main}>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src="/fondo.png" alt="" className={styles.fondo} aria-hidden="true" />
-
       <div className={styles.contenido}>
         <h1 className={styles.titulo}>La Avenida</h1>
 
