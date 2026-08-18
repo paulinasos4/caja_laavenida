@@ -45,7 +45,13 @@ export default function CargarPage() {
 
   return (
     <main className={styles.main}>
-      <div className={styles.card}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src="/fondo.png" alt="" className={styles.fondo} aria-hidden="true" />
+
+      <div className={styles.contenido}>
+        <h1 className={styles.titulo}>La Avenida</h1>
+
+        <div className={styles.card}>
         <p className={styles.fecha}>{formatearFecha(fecha)}</p>
 
         <form onSubmit={handleSubmit} className={styles.form}>
@@ -85,6 +91,7 @@ export default function CargarPage() {
         <Link href="/" className={styles.panelLink}>
           ← Volver al panel
         </Link>
+        </div>
       </div>
     </main>
   );
