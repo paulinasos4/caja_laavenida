@@ -4,11 +4,32 @@ import { useEffect, useState } from "react";
 import { formatearPesos, formatearFechaCorta as formatearFecha, mesLabel } from "@/lib/format";
 import styles from "./page.module.css";
 
+type Salida = {
+  id: number;
+  fecha: string;
+  motivo: string;
+  monto: number;
+};
+
 type Cierre = {
   fecha: string;
   efectivo: number;
   debito: number;
+  salidas?: Salida[];
 };
+
+function totalSalidas(c: Cierre) {
+  return (c.salidas ?? []).reduce((acc, s) => acc + s.monto, 0);
+}
+
+/** Lo vendido incluye la plata que salió de la caja durante el día. */
+function venta(c: Cierre) {
+  return c.efectivo + c.debito + totalSalidas(c);
+}
+
+function detalleSalidas(c: Cierre) {
+  return (c.salidas ?? []).map((s) => s.motivo).join(", ");
+}
 
 export default function ResumenPage() {
   const [cierres, setCierres] = useState<Cierre[]>([]);
@@ -91,17 +112,17 @@ export default function ResumenPage() {
     }
   }
 
-  const porMes = cierres.reduce<Record<string, { efectivo: number; debito: number; dias: number }>>(
-    (acc, c) => {
-      const mes = c.fecha.slice(0, 7);
-      if (!acc[mes]) acc[mes] = { efectivo: 0, debito: 0, dias: 0 };
-      acc[mes].efectivo += c.efectivo;
-      acc[mes].debito += c.debito;
-      acc[mes].dias += 1;
-      return acc;
-    },
-    {}
-  );
+  const porMes = cierres.reduce<
+    Record<string, { efectivo: number; debito: number; salidas: number; dias: number }>
+  >((acc, c) => {
+    const mes = c.fecha.slice(0, 7);
+    if (!acc[mes]) acc[mes] = { efectivo: 0, debito: 0, salidas: 0, dias: 0 };
+    acc[mes].efectivo += c.efectivo;
+    acc[mes].debito += c.debito;
+    acc[mes].salidas += totalSalidas(c);
+    acc[mes].dias += 1;
+    return acc;
+  }, {});
 
   const mesesOrdenados = Object.keys(porMes).sort((a, b) => b.localeCompare(a));
 
@@ -134,6 +155,9 @@ export default function ResumenPage() {
 
       <section className={styles.section}>
         <h2>Por mes</h2>
+        <p className={styles.nota}>
+          Venta = efectivo + débito + salidas de caja.
+        </p>
         <div className={styles.tableWrap}>
           <table className={styles.table}>
             <thead>
@@ -141,20 +165,23 @@ export default function ResumenPage() {
                 <th>Mes</th>
                 <th>Efectivo</th>
                 <th>Débito</th>
-                <th>Total</th>
+                <th>Salidas</th>
+                <th>Venta</th>
                 <th>Días</th>
               </tr>
             </thead>
             <tbody>
               {mesesOrdenados.map((mes) => {
                 const d = porMes[mes];
-                const total = d.efectivo + d.debito;
                 return (
                   <tr key={mes}>
                     <td>{mesLabel(mes + "-01")}</td>
                     <td>{formatearPesos(d.efectivo)}</td>
                     <td>{formatearPesos(d.debito)}</td>
-                    <td className={styles.total}>{formatearPesos(total)}</td>
+                    <td className={styles.salida}>{formatearPesos(d.salidas)}</td>
+                    <td className={styles.total}>
+                      {formatearPesos(d.efectivo + d.debito + d.salidas)}
+                    </td>
                     <td>{d.dias}</td>
                   </tr>
                 );
@@ -173,7 +200,8 @@ export default function ResumenPage() {
                 <th>Fecha</th>
                 <th>Efectivo</th>
                 <th>Débito</th>
-                <th>Total</th>
+                <th>Salidas</th>
+                <th>Venta</th>
                 <th>Acciones</th>
               </tr>
             </thead>
@@ -202,8 +230,15 @@ export default function ResumenPage() {
                         autoComplete="off"
                       />
                     </td>
+                    <td className={styles.salida} title={detalleSalidas(c)}>
+                      {formatearPesos(totalSalidas(c))}
+                    </td>
                     <td className={styles.total}>
-                      {formatearPesos((Number(editEfectivo) || 0) + (Number(editDebito) || 0))}
+                      {formatearPesos(
+                        (Number(editEfectivo) || 0) +
+                          (Number(editDebito) || 0) +
+                          totalSalidas(c)
+                      )}
                     </td>
                     <td>
                       <div className={styles.acciones}>
@@ -229,7 +264,13 @@ export default function ResumenPage() {
                     <td>{formatearFecha(c.fecha)}</td>
                     <td>{formatearPesos(c.efectivo)}</td>
                     <td>{formatearPesos(c.debito)}</td>
-                    <td className={styles.total}>{formatearPesos(c.efectivo + c.debito)}</td>
+                    <td className={styles.salida} title={detalleSalidas(c)}>
+                      {formatearPesos(totalSalidas(c))}
+                      {(c.salidas ?? []).length > 0 && (
+                        <span className={styles.motivos}>{detalleSalidas(c)}</span>
+                      )}
+                    </td>
+                    <td className={styles.total}>{formatearPesos(venta(c))}</td>
                     <td>
                       <div className={styles.acciones}>
                         <button
