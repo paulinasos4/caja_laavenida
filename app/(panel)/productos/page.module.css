@@ -178,16 +178,4 @@
   .title {
     font-size: 1.75rem;
   }
-
-  /* Lista de productos en dos columnas en pantallas grandes */
-  .lista {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0 1px;
-    background: #f0f0f0;
-  }
-
-  .item {
-    background: white;
-  }
 }
