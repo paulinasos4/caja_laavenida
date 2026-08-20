@@ -239,50 +239,98 @@ export async function deleteMovimiento(id: number): Promise<void> {
 export type Producto = {
   id: number;
   nombre: string;
+  /** null si no se conoce el precio. */
+  precio: number | null;
 };
 
+export type ProductoEntrada = {
+  nombre: string;
+  precio: number | null;
+};
+
+// La columna precio y el índice único por nombre se crean solos la primera
+// vez, para no depender de correr migraciones a mano en la base
+// (la tabla productos puede existir en prod sin la columna).
+let productosListos: Promise<void> | null = null;
+
+function ensureProductos(): Promise<void> {
+  if (!productosListos) {
+    const sql = getSql();
+    productosListos = (async () => {
+      await sql`ALTER TABLE productos ADD COLUMN IF NOT EXISTS precio numeric`;
+      // Índice único por nombre (ignorando mayúsculas) para poder hacer
+      // upsert: si el producto ya existe, se actualiza el precio.
+      await sql`
+        CREATE UNIQUE INDEX IF NOT EXISTS productos_nombre_key
+        ON productos (lower(nombre))
+      `;
+    })().catch((e) => {
+      productosListos = null;
+      throw e;
+    });
+  }
+  return productosListos;
+}
+
+function toProducto(row: Record<string, unknown>): Producto {
+  return {
+    id: Number(row.id),
+    nombre: String(row.nombre),
+    precio: row.precio === null || row.precio === undefined ? null : Number(row.precio),
+  };
+}
+
 export async function getProductos(): Promise<Producto[]> {
+  await ensureProductos();
   const sql = getSql();
   const rows = await sql`
-    SELECT id, nombre
+    SELECT id, nombre, precio
     FROM productos
     ORDER BY nombre ASC
   `;
 
-  return rows.map((p) => ({
-    id: Number(p.id),
-    nombre: String(p.nombre),
-  }));
+  return rows.map(toProducto);
 }
 
-export async function saveProducto(nombre: string): Promise<Producto> {
+// Alta/actualización individual. Si el nombre ya existe (ignorando
+// mayúsculas), actualiza el precio en vez de duplicar.
+export async function saveProducto(entrada: ProductoEntrada): Promise<Producto> {
+  await ensureProductos();
   const sql = getSql();
   const rows = await sql`
-    INSERT INTO productos (nombre)
-    VALUES (${nombre})
-    RETURNING id, nombre
+    INSERT INTO productos (nombre, precio)
+    VALUES (${entrada.nombre}, ${entrada.precio})
+    ON CONFLICT (lower(nombre)) DO UPDATE SET
+      precio = EXCLUDED.precio
+    RETURNING id, nombre, precio
   `;
 
-  const row = rows[0];
-  return {
-    id: Number(row.id),
-    nombre: String(row.nombre),
-  };
+  return toProducto(rows[0]);
 }
 
-// Inserta varios productos de una (para la carga por CSV).
-// Devuelve la cantidad insertada.
-export async function saveProductosBulk(nombres: string[]): Promise<number> {
-  const limpios = nombres
-    .map((n) => n.trim())
-    .filter((n) => n.length > 0);
+// Inserta/actualiza varios productos de una (para la carga por CSV).
+// Los que ya existen (por nombre) actualizan su precio. Devuelve la
+// cantidad total de filas procesadas.
+export async function saveProductosBulk(
+  entradas: ProductoEntrada[]
+): Promise<number> {
+  const limpios = entradas
+    .map((e) => ({ nombre: e.nombre.trim(), precio: e.precio }))
+    .filter((e) => e.nombre.length > 0);
 
   if (limpios.length === 0) return 0;
 
+  await ensureProductos();
   const sql = getSql();
   const rows = await sql`
-    INSERT INTO productos (nombre)
-    SELECT unnest(${limpios}::text[])
+    INSERT INTO productos (nombre, precio)
+    SELECT nombre, precio
+    FROM unnest(
+      ${limpios.map((e) => e.nombre)}::text[],
+      ${limpios.map((e) => e.precio)}::numeric[]
+    ) AS t(nombre, precio)
+    ON CONFLICT (lower(nombre)) DO UPDATE SET
+      precio = EXCLUDED.precio
     RETURNING id
   `;
 
@@ -290,6 +338,7 @@ export async function saveProductosBulk(nombres: string[]): Promise<number> {
 }
 
 export async function deleteProducto(id: number): Promise<void> {
+  await ensureProductos();
   const sql = getSql();
   await sql`DELETE FROM productos WHERE id = ${id}`;
 }

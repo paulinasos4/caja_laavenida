@@ -26,9 +26,14 @@ create table if not exists movimientos (
   created_at timestamptz default now()
 );
 
--- Lista simple de productos (solo para saber qué tenemos).
+-- Lista simple de productos (solo para saber qué tenemos), con su precio.
 create table if not exists productos (
   id bigint generated always as identity primary key,
   nombre text not null,
+  precio numeric,
   created_at timestamptz default now()
 );
+
+-- Nombre único (ignorando mayúsculas) para poder actualizar el precio
+-- de un producto ya existente en vez de duplicarlo.
+create unique index if not exists productos_nombre_key on productos (lower(nombre));

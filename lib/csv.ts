@@ -2,15 +2,22 @@
  * Parser de CSV para la lista de productos.
  *
  * El archivo tiene varias columnas con encabezado. Buscamos la columna
- * llamada "Producto" (sin distinguir mayúsculas, acentos ni espacios) y
- * devolvemos solo esos nombres, limpios y sin duplicados.
+ * llamada "Producto" (obligatoria) y, si existe, la de "Precio unitario",
+ * y devolvemos los productos con su precio, sin duplicados (por nombre,
+ * ignorando mayúsculas: si el nombre se repite gana la última fila).
  *
  * Si no existe una columna "Producto", NO se importa nada: se devuelve
  * un resultado con `columnas` (las que sí encontró) para poder avisar.
  */
 
+export type ProductoCSV = {
+  nombre: string;
+  /** null si no hay precio o no es un número válido. */
+  precio: number | null;
+};
+
 export type ResultadoCSV =
-  | { ok: true; nombres: string[] }
+  | { ok: true; productos: ProductoCSV[] }
   | { ok: false; motivo: "sin-columna" | "vacio"; columnas: string[] };
 
 /**
@@ -37,6 +44,38 @@ export async function leerArchivoTexto(file: File): Promise<string> {
 
 // Nombres de encabezado que aceptamos para la columna de productos.
 const NOMBRES_COLUMNA = ["producto", "productos"];
+// Nombres de encabezado que aceptamos para la columna de precio.
+const NOMBRES_PRECIO = ["precio unitario", "precio", "precio unit"];
+
+/**
+ * Convierte el texto de una celda de precio a número.
+ * Tolera decimales con coma ("128,33"), separadores de miles ("1.200")
+ * y devuelve null ante valores inválidos ("#DIV/0!", vacío, etc.).
+ */
+function parsearPrecio(texto: string): number | null {
+  const t = (texto ?? "").trim();
+  if (!t) return null;
+
+  // Si tiene letras u otros símbolos raros (ej. "#DIV/0!"), no es un precio.
+  // Solo aceptamos dígitos, separadores, signo y espacios/símbolo de moneda.
+  if (/[^\d,.\-\s$]/.test(t)) return null;
+
+  // Deja solo dígitos, coma, punto y signo negativo.
+  let limpio = t.replace(/[^\d,.\-]/g, "");
+  if (!limpio) return null;
+
+  // Si tiene coma y punto, asumimos punto = miles y coma = decimal ("1.234,56").
+  if (limpio.includes(",") && limpio.includes(".")) {
+    limpio = limpio.replace(/\./g, "").replace(",", ".");
+  } else if (limpio.includes(",")) {
+    // Solo coma: es el separador decimal ("128,33").
+    limpio = limpio.replace(",", ".");
+  }
+
+  const n = Number(limpio);
+  if (!Number.isFinite(n) || n < 0) return null;
+  return n;
+}
 
 /** Normaliza texto para comparar encabezados: minúsculas, sin acentos ni espacios extra. */
 function normalizar(texto: string): string {
@@ -111,6 +150,7 @@ export function parseProductosCSV(texto: string): ResultadoCSV {
   // tenga una columna "Producto".
   let indiceFila = -1;
   let indiceCol = -1;
+  let indicePrecio = -1;
   let sep = ";";
 
   for (let i = 0; i < lineas.length; i++) {
@@ -120,6 +160,7 @@ export function parseProductosCSV(texto: string): ResultadoCSV {
     if (col !== -1) {
       indiceFila = i;
       indiceCol = col;
+      indicePrecio = campos.findIndex((h) => NOMBRES_PRECIO.includes(normalizar(h)));
       sep = sepLinea;
       break;
     }
@@ -132,22 +173,29 @@ export function parseProductosCSV(texto: string): ResultadoCSV {
     return { ok: false, motivo: "sin-columna", columnas };
   }
 
-  // Extrae la columna "Producto" de cada fila DESPUÉS del header.
-  const vistos = new Set<string>();
-  const nombres: string[] = [];
+  // Extrae producto (+ precio) de cada fila DESPUÉS del header.
+  // Deduplica por nombre ignorando mayúsculas; si se repite, gana la última fila.
+  const indicePorClave = new Map<string, number>();
+  const productos: ProductoCSV[] = [];
 
   for (let i = indiceFila + 1; i < lineas.length; i++) {
     const campos = parsearLinea(lineas[i], sep);
-    const valor = (campos[indiceCol] ?? "").trim();
-    if (!valor) continue;
+    const nombre = (campos[indiceCol] ?? "").trim();
+    if (!nombre) continue; // salta filas vacías / totales del pie
 
-    // Descarta filas de "totales"/parámetros del pie del export:
-    // suelen tener la celda de producto vacía o texto que no es un producto.
-    const clave = valor.toLowerCase();
-    if (vistos.has(clave)) continue;
-    vistos.add(clave);
-    nombres.push(valor);
+    const precio =
+      indicePrecio !== -1 ? parsearPrecio(campos[indicePrecio] ?? "") : null;
+
+    const clave = nombre.toLowerCase();
+    const existente = indicePorClave.get(clave);
+    if (existente !== undefined) {
+      // Repetido: la última fila gana (actualiza el precio).
+      productos[existente] = { nombre, precio };
+    } else {
+      indicePorClave.set(clave, productos.length);
+      productos.push({ nombre, precio });
+    }
   }
 
-  return { ok: true, nombres };
+  return { ok: true, productos };
 }

@@ -178,6 +178,15 @@
   cursor: default;
 }
 
+.itemPrecio {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: #2d7a3a;
+  white-space: nowrap;
+  min-width: 84px;
+  text-align: right;
+}
+
 /* ===== Desktop ===== */
 @media (min-width: 768px) {
   .main {

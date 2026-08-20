@@ -2,11 +2,13 @@
 
 import { useEffect, useRef, useState } from "react";
 import { parseProductosCSV, leerArchivoTexto } from "@/lib/csv";
+import { formatearPesos } from "@/lib/format";
 import styles from "./page.module.css";
 
 type Producto = {
   id: number;
   nombre: string;
+  precio: number | null;
 };
 
 export default function ProductosPage() {
@@ -99,7 +101,7 @@ export default function ProductosPage() {
         return;
       }
 
-      if (resultado.nombres.length === 0) {
+      if (resultado.productos.length === 0) {
         setAviso('La columna "Producto" no tiene ningún valor.');
         return;
       }
@@ -107,7 +109,7 @@ export default function ProductosPage() {
       const res = await fetch("/api/productos", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nombres: resultado.nombres }),
+        body: JSON.stringify({ productos: resultado.productos }),
       });
 
       if (res.ok) {
@@ -208,6 +210,9 @@ export default function ProductosPage() {
             <li key={p.id} className={styles.item}>
               <span className={styles.itemIcon}>📦</span>
               <span className={styles.itemName}>{p.nombre}</span>
+              <span className={styles.itemPrecio}>
+                {p.precio !== null ? formatearPesos(p.precio) : "—"}
+              </span>
               <button
                 className={styles.borrar}
                 onClick={() => borrar(p.id, p.nombre)}
