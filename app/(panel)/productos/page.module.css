@@ -158,25 +158,6 @@
   font-size: 0.9375rem;
 }
 
-.borrar {
-  border: none;
-  background: transparent;
-  color: #c0392b;
-  font-size: 1rem;
-  cursor: pointer;
-  padding: 4px 8px;
-  border-radius: 6px;
-  line-height: 1;
-}
-
-.borrar:hover {
-  background: #fdeaea;
-}
-
-.borrar:disabled {
-  opacity: 0.4;
-  cursor: default;
-}
 
 .itemPrecio {
   font-size: 0.9375rem;

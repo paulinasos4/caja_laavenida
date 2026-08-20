@@ -65,17 +65,6 @@ export default function ProductosPage() {
     }
   }
 
-  async function borrar(id: number, nombre: string) {
-    if (!confirm(`¿Borrar "${nombre}"?`)) return;
-    setOcupado(true);
-    try {
-      const res = await fetch(`/api/productos?id=${id}`, { method: "DELETE" });
-      if (res.ok) await cargar();
-    } finally {
-      setOcupado(false);
-    }
-  }
-
   async function importarCSV(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     // Permite volver a elegir el mismo archivo después.
@@ -213,14 +202,6 @@ export default function ProductosPage() {
               <span className={styles.itemPrecio}>
                 {p.precio !== null ? formatearPesos(p.precio) : "—"}
               </span>
-              <button
-                className={styles.borrar}
-                onClick={() => borrar(p.id, p.nombre)}
-                disabled={ocupado}
-                aria-label={`Borrar ${p.nombre}`}
-              >
-                ✕
-              </button>
             </li>
           ))}
         </ul>
