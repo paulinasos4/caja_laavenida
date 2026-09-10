@@ -40,6 +40,17 @@ const accesos = [
     ),
   },
   {
+    href: "/mercado",
+    label: "Gastos mercado",
+    color: "#c0392b",
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M4 8h16l-1.5 12h-13L4 8z" />
+        <path d="M9 8V5.5a3 3 0 0 1 6 0V8" />
+      </svg>
+    ),
+  },
+  {
     href: "/productos",
     label: "Ver productos",
     color: "#7a4fb0",

@@ -1,0 +1,231 @@
+.main {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 20px 16px 32px;
+}
+
+.header {
+  margin-bottom: 16px;
+}
+
+.title {
+  font-size: 1.375rem;
+  font-weight: 700;
+  color: white;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+.subtitle {
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.85);
+  margin-top: 4px;
+}
+
+/* ---- Resumen del mes ---- */
+.resumen {
+  display: flex;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.resumen > div {
+  flex: 1;
+}
+
+.resumenLabel {
+  font-size: 0.8125rem;
+  color: #777;
+}
+
+.resumenValor {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #c0392b;
+}
+
+.nueva {
+  width: 100%;
+  background: #2d7a3a;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 14px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 16px;
+}
+
+.nueva:hover {
+  background: #276a33;
+}
+
+/* ---- Formulario ---- */
+.form {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 14px;
+  padding: 18px;
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #444;
+  flex: 1;
+}
+
+.opcional {
+  font-weight: 400;
+  color: #999;
+}
+
+.input {
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 1rem;
+  outline: none;
+  font-weight: 400;
+}
+
+.input:focus {
+  border-color: #2d7a3a;
+}
+
+.formRow {
+  display: flex;
+  gap: 12px;
+}
+
+.guardar {
+  background: #2d7a3a;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.guardar:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* ---- Tabla ---- */
+.tableWrap {
+  overflow-x: auto;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.06);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9375rem;
+}
+
+.table th,
+.table td {
+  padding: 12px 14px;
+  text-align: left;
+  border-bottom: 1px solid #f0f0f0;
+  white-space: nowrap;
+}
+
+.table th {
+  background: #fafafa;
+  font-weight: 600;
+  color: #888;
+  font-size: 0.8125rem;
+}
+
+.grupo td {
+  background: #f6f6f6;
+  font-weight: 700;
+  font-size: 0.8125rem;
+  color: #555;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.dia {
+  display: block;
+  font-size: 0.75rem;
+  color: #999;
+}
+
+.detalle {
+  white-space: normal;
+  color: #666;
+}
+
+.monto {
+  font-weight: 600;
+}
+
+.borrar {
+  border: none;
+  background: transparent;
+  color: #c0392b;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  line-height: 1;
+}
+
+.borrar:hover {
+  background: #fdeaea;
+}
+
+.borrar:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.estado {
+  color: #666;
+  padding: 24px 4px;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 12px;
+}
+
+/* ===== Desktop ===== */
+@media (min-width: 768px) {
+  .main {
+    max-width: 1000px;
+    padding: 32px 40px;
+  }
+
+  .title {
+    font-size: 1.75rem;
+  }
+
+  .resumen {
+    max-width: 420px;
+  }
+
+  .nueva {
+    width: auto;
+    padding: 12px 24px;
+  }
+}

@@ -16,6 +16,19 @@ create table if not exists salidas (
 
 create index if not exists salidas_fecha_idx on salidas (fecha);
 
+-- Compras de frutas y verduras en el mercado (lunes y jueves).
+-- Va aparte de facturas y gastos porque es una sección propia.
+create table if not exists gastos_mercado (
+  id bigint generated always as identity primary key,
+  fecha text not null,
+  lugar text not null,
+  detalle text not null default '',
+  monto numeric not null default 0,
+  created_at timestamptz default now()
+);
+
+create index if not exists gastos_mercado_fecha_idx on gastos_mercado (fecha);
+
 -- Facturas y gastos juntos, diferenciados por "tipo".
 create table if not exists movimientos (
   id bigint generated always as identity primary key,

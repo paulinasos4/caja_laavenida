@@ -180,6 +180,89 @@ export async function deleteCierre(fecha: string): Promise<void> {
   await sql`DELETE FROM cierres WHERE fecha = ${fecha}`;
 }
 
+// ---------- Gastos de mercado (compra de frutas y verduras) ----------
+
+export type GastoMercado = {
+  id: number;
+  fecha: string;
+  lugar: string;
+  detalle: string;
+  monto: number;
+};
+
+export type NuevoGastoMercado = Omit<GastoMercado, "id">;
+
+// La tabla se crea sola la primera vez, igual que las salidas.
+let mercadoListo: Promise<void> | null = null;
+
+function ensureMercado(): Promise<void> {
+  if (!mercadoListo) {
+    const sql = getSql();
+    mercadoListo = (async () => {
+      await sql`
+        CREATE TABLE IF NOT EXISTS gastos_mercado (
+          id bigint generated always as identity primary key,
+          fecha text not null,
+          lugar text not null,
+          detalle text not null default '',
+          monto numeric not null default 0,
+          created_at timestamptz default now()
+        )
+      `;
+      await sql`
+        CREATE INDEX IF NOT EXISTS gastos_mercado_fecha_idx
+        ON gastos_mercado (fecha)
+      `;
+    })().catch((e) => {
+      mercadoListo = null;
+      throw e;
+    });
+  }
+  return mercadoListo;
+}
+
+function toGastoMercado(row: Record<string, unknown>): GastoMercado {
+  return {
+    id: Number(row.id),
+    fecha: String(row.fecha),
+    lugar: String(row.lugar),
+    detalle: String(row.detalle ?? ""),
+    monto: Number(row.monto),
+  };
+}
+
+export async function getGastosMercado(): Promise<GastoMercado[]> {
+  await ensureMercado();
+  const sql = getSql();
+  const rows = await sql`
+    SELECT id, fecha, lugar, detalle, monto
+    FROM gastos_mercado
+    ORDER BY fecha DESC, id DESC
+  `;
+
+  return rows.map(toGastoMercado);
+}
+
+export async function saveGastoMercado(
+  gasto: NuevoGastoMercado
+): Promise<GastoMercado> {
+  await ensureMercado();
+  const sql = getSql();
+  const rows = await sql`
+    INSERT INTO gastos_mercado (fecha, lugar, detalle, monto)
+    VALUES (${gasto.fecha}, ${gasto.lugar}, ${gasto.detalle}, ${gasto.monto})
+    RETURNING id, fecha, lugar, detalle, monto
+  `;
+
+  return toGastoMercado(rows[0]);
+}
+
+export async function deleteGastoMercado(id: number): Promise<void> {
+  await ensureMercado();
+  const sql = getSql();
+  await sql`DELETE FROM gastos_mercado WHERE id = ${id}`;
+}
+
 // ---------- Movimientos (facturas y gastos) ----------
 
 export type TipoMovimiento = "factura" | "gasto";
