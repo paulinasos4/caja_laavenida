@@ -113,6 +113,102 @@
   gap: 12px;
 }
 
+/* ---- Foto del remito ---- */
+.fotoCampo {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.fotoLabel {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #444;
+}
+
+.fotoBotones {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.fotoBtn,
+.fotoBtnSec {
+  border-radius: 10px;
+  padding: 14px 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Elegir de la galería es lo más usado: va primero y bien visible. */
+.fotoBtn {
+  flex: 2;
+  min-width: 160px;
+  background: #eaf3ec;
+  color: #2d7a3a;
+  border: 2px solid #2d7a3a;
+}
+
+.fotoBtnSec {
+  flex: 1;
+  min-width: 140px;
+  background: white;
+  color: #666;
+  border: 1px solid #ddd;
+}
+
+.fotoBtn:disabled,
+.fotoBtnSec:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.fotoAyuda {
+  font-size: 0.8125rem;
+  color: #777;
+  margin-top: -6px;
+}
+
+.fotoPreview {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.fotoMini {
+  width: 84px;
+  height: 84px;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 1px solid #ddd;
+}
+
+.quitarFoto {
+  background: #fdeaea;
+  color: #c0392b;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.fotoEstado {
+  font-size: 0.8125rem;
+  color: #777;
+}
+
+.aviso {
+  background: #fdeaea;
+  color: #a12a1c;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 0.9375rem;
+  margin-bottom: 16px;
+}
+
 .guardar {
   background: #2d7a3a;
   color: white;
@@ -173,13 +269,66 @@
   color: #999;
 }
 
-.detalle {
-  white-space: normal;
-  color: #666;
-}
-
 .monto {
   font-weight: 600;
+}
+
+.verFoto {
+  background: #eaf3ec;
+  color: #2d7a3a;
+  border: none;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.sinFoto {
+  color: #bbb;
+}
+
+/* ---- Foto en grande ---- */
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.modalCaja {
+  background: white;
+  border-radius: 14px;
+  padding: 12px;
+  max-width: 560px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+}
+
+.modalImg {
+  width: 100%;
+  max-height: 70dvh;
+  object-fit: contain;
+  border-radius: 10px;
+  background: #f5f5f5;
+}
+
+.modalCerrar {
+  background: #2d7a3a;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
 }
 
 .borrar {

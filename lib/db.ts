@@ -185,12 +185,17 @@ export async function deleteCierre(fecha: string): Promise<void> {
 export type GastoMercado = {
   id: number;
   fecha: string;
-  lugar: string;
-  detalle: string;
   monto: number;
+  /** La foto no viaja en el listado: se pide aparte por su id. */
+  tieneFoto: boolean;
 };
 
-export type NuevoGastoMercado = Omit<GastoMercado, "id">;
+export type NuevoGastoMercado = {
+  fecha: string;
+  monto: number;
+  /** Foto del remito como data URL, o null si no sacaron ninguna. */
+  foto?: string | null;
+};
 
 // La tabla se crea sola la primera vez, igual que las salidas.
 let mercadoListo: Promise<void> | null = null;
@@ -203,9 +208,10 @@ function ensureMercado(): Promise<void> {
         CREATE TABLE IF NOT EXISTS gastos_mercado (
           id bigint generated always as identity primary key,
           fecha text not null,
-          lugar text not null,
+          lugar text not null default '',
           detalle text not null default '',
           monto numeric not null default 0,
+          foto text,
           created_at timestamptz default now()
         )
       `;
@@ -213,6 +219,10 @@ function ensureMercado(): Promise<void> {
         CREATE INDEX IF NOT EXISTS gastos_mercado_fecha_idx
         ON gastos_mercado (fecha)
       `;
+      // La foto se agregó después, y lugar/detalle quedaron sin uso: les
+      // ponemos default para que las compras nuevas no tengan que mandarlos.
+      await sql`ALTER TABLE gastos_mercado ADD COLUMN IF NOT EXISTS foto text`;
+      await sql`ALTER TABLE gastos_mercado ALTER COLUMN lugar SET DEFAULT ''`;
     })().catch((e) => {
       mercadoListo = null;
       throw e;
@@ -225,22 +235,36 @@ function toGastoMercado(row: Record<string, unknown>): GastoMercado {
   return {
     id: Number(row.id),
     fecha: String(row.fecha),
-    lugar: String(row.lugar),
-    detalle: String(row.detalle ?? ""),
     monto: Number(row.monto),
+    tieneFoto: Boolean(row.tiene_foto),
   };
 }
 
 export async function getGastosMercado(): Promise<GastoMercado[]> {
   await ensureMercado();
   const sql = getSql();
+  // Sin traer la foto: son varios cientos de KB cada una.
   const rows = await sql`
-    SELECT id, fecha, lugar, detalle, monto
+    SELECT id, fecha, monto, (foto IS NOT NULL) AS tiene_foto
     FROM gastos_mercado
     ORDER BY fecha DESC, id DESC
   `;
 
   return rows.map(toGastoMercado);
+}
+
+/** Devuelve la foto de una compra como data URL, o null si no tiene. */
+export async function getFotoGastoMercado(id: number): Promise<string | null> {
+  await ensureMercado();
+  const sql = getSql();
+  const rows = await sql`
+    SELECT foto
+    FROM gastos_mercado
+    WHERE id = ${id}
+  `;
+
+  const foto = rows[0]?.foto;
+  return foto ? String(foto) : null;
 }
 
 export async function saveGastoMercado(
@@ -249,9 +273,9 @@ export async function saveGastoMercado(
   await ensureMercado();
   const sql = getSql();
   const rows = await sql`
-    INSERT INTO gastos_mercado (fecha, lugar, detalle, monto)
-    VALUES (${gasto.fecha}, ${gasto.lugar}, ${gasto.detalle}, ${gasto.monto})
-    RETURNING id, fecha, lugar, detalle, monto
+    INSERT INTO gastos_mercado (fecha, monto, foto)
+    VALUES (${gasto.fecha}, ${gasto.monto}, ${gasto.foto ?? null})
+    RETURNING id, fecha, monto, (foto IS NOT NULL) AS tiene_foto
   `;
 
   return toGastoMercado(rows[0]);

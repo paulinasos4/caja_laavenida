@@ -18,12 +18,16 @@ create index if not exists salidas_fecha_idx on salidas (fecha);
 
 -- Compras de frutas y verduras en el mercado (lunes y jueves).
 -- Va aparte de facturas y gastos porque es una sección propia.
+-- Sólo se cargan monto, fecha y (opcional) la foto del remito, guardada
+-- como data URL en "foto". Las columnas lugar y detalle quedaron sin uso:
+-- se conservan por las compras viejas que sí las tenían cargadas.
 create table if not exists gastos_mercado (
   id bigint generated always as identity primary key,
   fecha text not null,
-  lugar text not null,
+  lugar text not null default '',
   detalle text not null default '',
   monto numeric not null default 0,
+  foto text,
   created_at timestamptz default now()
 );
 

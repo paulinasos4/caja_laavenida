@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   formatearPesos,
   formatearFechaCorta,
@@ -8,14 +8,14 @@ import {
   diaSemana,
   mesLabel,
 } from "@/lib/format";
+import { comprimirImagen } from "@/lib/imagen";
 import styles from "./page.module.css";
 
 type GastoMercado = {
   id: number;
   fecha: string;
-  lugar: string;
-  detalle: string;
   monto: number;
+  tieneFoto: boolean;
 };
 
 export default function MercadoPage() {
@@ -24,11 +24,18 @@ export default function MercadoPage() {
   const [error, setError] = useState(false);
   const [ocupado, setOcupado] = useState(false);
   const [form, setForm] = useState(false);
+  const [aviso, setAviso] = useState<string | null>(null);
 
   const [fecha, setFecha] = useState(hoyISO);
-  const [lugar, setLugar] = useState("");
-  const [detalle, setDetalle] = useState("");
   const [monto, setMonto] = useState("");
+  const [foto, setFoto] = useState<string | null>(null);
+  const [procesandoFoto, setProcesandoFoto] = useState(false);
+
+  // Foto que se está mirando en grande (id de la compra).
+  const [fotoAbierta, setFotoAbierta] = useState<number | null>(null);
+
+  const camaraRef = useRef<HTMLInputElement>(null);
+  const archivoRef = useRef<HTMLInputElement>(null);
 
   async function cargar() {
     setCargando(true);
@@ -52,29 +59,55 @@ export default function MercadoPage() {
     cargar();
   }, []);
 
+  async function elegirFoto(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    // Permite volver a elegir el mismo archivo después.
+    e.target.value = "";
+    if (!file) return;
+
+    setAviso(null);
+
+    if (!file.type.startsWith("image/")) {
+      setAviso("Ese archivo no es una imagen. Elegí una foto o captura de pantalla.");
+      return;
+    }
+
+    setProcesandoFoto(true);
+    try {
+      setFoto(await comprimirImagen(file));
+    } catch {
+      setAviso("No se pudo procesar la foto. Probá de nuevo.");
+    } finally {
+      setProcesandoFoto(false);
+    }
+  }
+
   async function guardar(e: React.FormEvent) {
     e.preventDefault();
-    if (!lugar.trim()) return;
+    if (!(Number(monto) > 0)) return;
+
     setOcupado(true);
+    setAviso(null);
     try {
       const res = await fetch("/api/mercado", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          fecha,
-          lugar: lugar.trim(),
-          detalle: detalle.trim(),
-          monto: Number(monto) || 0,
-        }),
+        body: JSON.stringify({ fecha, monto: Number(monto), foto }),
       });
+
       if (res.ok) {
-        setLugar("");
-        setDetalle("");
         setMonto("");
+        setFoto(null);
         setFecha(hoyISO());
         setForm(false);
         await cargar();
+      } else if (res.status === 413) {
+        setAviso("La foto es muy grande. Probá sacarla de nuevo.");
+      } else {
+        setAviso("No se pudo guardar la compra.");
       }
+    } catch {
+      setAviso("No se pudo guardar la compra.");
     } finally {
       setOcupado(false);
     }
@@ -132,30 +165,6 @@ export default function MercadoPage() {
 
       {form && (
         <form onSubmit={guardar} className={styles.form}>
-          <label className={styles.label}>
-            Dónde compró
-            <input
-              type="text"
-              value={lugar}
-              onChange={(e) => setLugar(e.target.value)}
-              className={styles.input}
-              placeholder="Ej: Mercado Central"
-              autoComplete="off"
-            />
-          </label>
-
-          <label className={styles.label}>
-            Qué compró <span className={styles.opcional}>(opcional)</span>
-            <input
-              type="text"
-              value={detalle}
-              onChange={(e) => setDetalle(e.target.value)}
-              className={styles.input}
-              placeholder="Ej: tomate, lechuga, banana"
-              autoComplete="off"
-            />
-          </label>
-
           <div className={styles.formRow}>
             <label className={styles.label}>
               Monto
@@ -180,15 +189,79 @@ export default function MercadoPage() {
             </label>
           </div>
 
+          <div className={styles.fotoCampo}>
+            <span className={styles.fotoLabel}>
+              Foto del comprobante <span className={styles.opcional}>(opcional)</span>
+            </span>
+            <span className={styles.fotoAyuda}>
+              Sirve la que te mandaron por WhatsApp: elegila de la galería.
+            </span>
+
+            {foto ? (
+              <div className={styles.fotoPreview}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={foto} alt="Foto del comprobante" className={styles.fotoMini} />
+                <button
+                  type="button"
+                  onClick={() => setFoto(null)}
+                  className={styles.quitarFoto}
+                >
+                  Quitar foto
+                </button>
+              </div>
+            ) : (
+              <div className={styles.fotoBotones}>
+                <button
+                  type="button"
+                  className={styles.fotoBtn}
+                  onClick={() => archivoRef.current?.click()}
+                  disabled={procesandoFoto}
+                >
+                  🖼 Elegir foto
+                </button>
+                <button
+                  type="button"
+                  className={styles.fotoBtnSec}
+                  onClick={() => camaraRef.current?.click()}
+                  disabled={procesandoFoto}
+                >
+                  📷 Sacar foto
+                </button>
+              </div>
+            )}
+
+            {procesandoFoto && <p className={styles.fotoEstado}>Preparando la foto…</p>}
+
+            {/* Sin "capture": en el celular deja elegir de la galería o sacarla. */}
+            <input
+              ref={archivoRef}
+              type="file"
+              accept="image/*"
+              onChange={elegirFoto}
+              hidden
+            />
+            {/* Atajo para ir directo a la cámara. */}
+            <input
+              ref={camaraRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              onChange={elegirFoto}
+              hidden
+            />
+          </div>
+
           <button
             type="submit"
             className={styles.guardar}
-            disabled={ocupado || !lugar.trim()}
+            disabled={ocupado || procesandoFoto || !(Number(monto) > 0)}
           >
             {ocupado ? "Guardando…" : "Guardar"}
           </button>
         </form>
       )}
+
+      {aviso && <p className={styles.aviso}>{aviso}</p>}
 
       {cargando ? (
         <p className={styles.estado}>Cargando…</p>
@@ -211,9 +284,8 @@ export default function MercadoPage() {
             <thead>
               <tr>
                 <th>Fecha</th>
-                <th>Dónde</th>
-                <th>Qué</th>
                 <th>Monto</th>
+                <th>Foto</th>
                 <th></th>
               </tr>
             </thead>
@@ -222,7 +294,7 @@ export default function MercadoPage() {
               return (
                 <tbody key={mes}>
                   <tr className={styles.grupo}>
-                    <td colSpan={5}>
+                    <td colSpan={4}>
                       {mesLabel(mes + "-01")} · {formatearPesos(total(lista))}
                     </td>
                   </tr>
@@ -232,9 +304,19 @@ export default function MercadoPage() {
                         {formatearFechaCorta(g.fecha)}
                         <span className={styles.dia}>{diaSemana(g.fecha)}</span>
                       </td>
-                      <td>{g.lugar}</td>
-                      <td className={styles.detalle}>{g.detalle || "—"}</td>
                       <td className={styles.monto}>{formatearPesos(g.monto)}</td>
+                      <td>
+                        {g.tieneFoto ? (
+                          <button
+                            className={styles.verFoto}
+                            onClick={() => setFotoAbierta(g.id)}
+                          >
+                            📷 Ver
+                          </button>
+                        ) : (
+                          <span className={styles.sinFoto}>—</span>
+                        )}
+                      </td>
                       <td>
                         <button
                           className={styles.borrar}
@@ -251,6 +333,22 @@ export default function MercadoPage() {
               );
             })}
           </table>
+        </div>
+      )}
+
+      {fotoAbierta !== null && (
+        <div className={styles.modal} onClick={() => setFotoAbierta(null)}>
+          <div className={styles.modalCaja} onClick={(e) => e.stopPropagation()}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={`/api/mercado/foto?id=${fotoAbierta}`}
+              alt="Foto del remito"
+              className={styles.modalImg}
+            />
+            <button className={styles.modalCerrar} onClick={() => setFotoAbierta(null)}>
+              Cerrar
+            </button>
+          </div>
         </div>
       )}
     </main>

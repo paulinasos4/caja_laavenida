@@ -5,6 +5,9 @@ import {
   deleteGastoMercado,
 } from "@/lib/db";
 
+// Tope de la foto ya comprimida por el navegador (~4 MB en base64).
+const MAX_FOTO = 4 * 1024 * 1024;
+
 export async function GET() {
   try {
     const gastos = await getGastosMercado();
@@ -17,17 +20,24 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { fecha, lugar, detalle, monto } = body;
+    const { fecha, monto, foto } = body;
 
-    if (!fecha || !lugar || monto === undefined) {
+    if (!fecha || monto === undefined) {
       return NextResponse.json({ error: "Faltan datos" }, { status: 400 });
+    }
+
+    let imagen: string | null = null;
+    if (typeof foto === "string" && foto.startsWith("data:image/")) {
+      if (foto.length > MAX_FOTO) {
+        return NextResponse.json({ error: "La foto es muy grande" }, { status: 413 });
+      }
+      imagen = foto;
     }
 
     const gasto = await saveGastoMercado({
       fecha: String(fecha),
-      lugar: String(lugar),
-      detalle: String(detalle ?? ""),
       monto: Number(monto) || 0,
+      foto: imagen,
     });
 
     return NextResponse.json(gasto);
