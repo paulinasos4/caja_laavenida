@@ -16,6 +16,7 @@ export type Cierre = {
   fecha: string;
   efectivo: number;
   debito: number;
+  comestibles: number;
   salidas: Salida[];
 };
 
@@ -23,6 +24,7 @@ export type NuevoCierre = {
   fecha: string;
   efectivo: number;
   debito: number;
+  comestibles: number;
   /** Si viene, reemplaza las salidas del día. Si no, quedan como estaban. */
   salidas?: NuevaSalida[];
 };
@@ -33,14 +35,14 @@ function getSql() {
   return neon(url);
 }
 
-// La tabla de salidas se crea sola la primera vez para no depender de
-// correr el schema a mano en la base.
-let salidasListas: Promise<void> | null = null;
+// La tabla de salidas y la columna comestibles se crean solas la primera
+// vez para no depender de correr el schema a mano en la base.
+let cajaLista: Promise<void> | null = null;
 
-function ensureSalidas(): Promise<void> {
-  if (!salidasListas) {
+function ensureCaja(): Promise<void> {
+  if (!cajaLista) {
     const sql = getSql();
-    salidasListas = (async () => {
+    cajaLista = (async () => {
       await sql`
         CREATE TABLE IF NOT EXISTS salidas (
           id bigint generated always as identity primary key,
@@ -51,12 +53,16 @@ function ensureSalidas(): Promise<void> {
         )
       `;
       await sql`CREATE INDEX IF NOT EXISTS salidas_fecha_idx ON salidas (fecha)`;
+      await sql`
+        ALTER TABLE cierres
+        ADD COLUMN IF NOT EXISTS comestibles numeric not null default 0
+      `;
     })().catch((e) => {
-      salidasListas = null;
+      cajaLista = null;
       throw e;
     });
   }
-  return salidasListas;
+  return cajaLista;
 }
 
 function toSalida(row: Record<string, unknown>): Salida {
@@ -69,12 +75,12 @@ function toSalida(row: Record<string, unknown>): Salida {
 }
 
 export async function getCierres(): Promise<Cierre[]> {
-  await ensureSalidas();
+  await ensureCaja();
   const sql = getSql();
 
   const [cierres, salidas] = await Promise.all([
     sql`
-      SELECT fecha, efectivo, debito
+      SELECT fecha, efectivo, debito, comestibles
       FROM cierres
       ORDER BY fecha DESC
     `,
@@ -99,13 +105,14 @@ export async function getCierres(): Promise<Cierre[]> {
       fecha,
       efectivo: Number(c.efectivo),
       debito: Number(c.debito),
+      comestibles: Number(c.comestibles),
       salidas: porFecha.get(fecha) ?? [],
     };
   });
 }
 
 export async function getSalidas(fecha: string): Promise<Salida[]> {
-  await ensureSalidas();
+  await ensureCaja();
   const sql = getSql();
   const rows = await sql`
     SELECT id, fecha, motivo, monto
@@ -122,7 +129,7 @@ export async function replaceSalidas(
   fecha: string,
   salidas: NuevaSalida[]
 ): Promise<void> {
-  await ensureSalidas();
+  await ensureCaja();
   const sql = getSql();
 
   const limpias = salidas
@@ -147,15 +154,16 @@ export async function replaceSalidas(
 }
 
 export async function saveCierre(cierre: NuevoCierre): Promise<Cierre> {
-  await ensureSalidas();
+  await ensureCaja();
   const sql = getSql();
   const rows = await sql`
-    INSERT INTO cierres (fecha, efectivo, debito)
-    VALUES (${cierre.fecha}, ${cierre.efectivo}, ${cierre.debito})
+    INSERT INTO cierres (fecha, efectivo, debito, comestibles)
+    VALUES (${cierre.fecha}, ${cierre.efectivo}, ${cierre.debito}, ${cierre.comestibles})
     ON CONFLICT (fecha) DO UPDATE SET
       efectivo = EXCLUDED.efectivo,
-      debito = EXCLUDED.debito
-    RETURNING fecha, efectivo, debito
+      debito = EXCLUDED.debito,
+      comestibles = EXCLUDED.comestibles
+    RETURNING fecha, efectivo, debito, comestibles
   `;
 
   const row = rows[0];
@@ -169,12 +177,13 @@ export async function saveCierre(cierre: NuevoCierre): Promise<Cierre> {
     fecha,
     efectivo: Number(row.efectivo),
     debito: Number(row.debito),
+    comestibles: Number(row.comestibles),
     salidas: await getSalidas(fecha),
   };
 }
 
 export async function deleteCierre(fecha: string): Promise<void> {
-  await ensureSalidas();
+  await ensureCaja();
   const sql = getSql();
   await sql`DELETE FROM salidas WHERE fecha = ${fecha}`;
   await sql`DELETE FROM cierres WHERE fecha = ${fecha}`;

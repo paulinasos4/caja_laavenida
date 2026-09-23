@@ -1,7 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { formatearPesos, formatearFechaCorta as formatearFecha, mesLabel } from "@/lib/format";
+import {
+  formatearPesos,
+  formatearFechaCorta as formatearFecha,
+  hoyISO,
+  mesLabel,
+} from "@/lib/format";
 import styles from "./page.module.css";
 
 type Salida = {
@@ -15,6 +20,7 @@ type Cierre = {
   fecha: string;
   efectivo: number;
   debito: number;
+  comestibles: number;
   salidas?: Salida[];
 };
 
@@ -24,7 +30,7 @@ function totalSalidas(c: Cierre) {
 
 /** Lo vendido incluye la plata que salió de la caja durante el día. */
 function venta(c: Cierre) {
-  return c.efectivo + c.debito + totalSalidas(c);
+  return c.efectivo + c.debito + c.comestibles + totalSalidas(c);
 }
 
 function detalleSalidas(c: Cierre) {
@@ -40,7 +46,14 @@ export default function ResumenPage() {
   const [editando, setEditando] = useState<string | null>(null);
   const [editEfectivo, setEditEfectivo] = useState("");
   const [editDebito, setEditDebito] = useState("");
+  const [editComestibles, setEditComestibles] = useState("");
   const [ocupado, setOcupado] = useState(false);
+
+  // Alta de un cierre de un día pasado, para cuando se olvidaron de cargarlo.
+  const [nuevaFecha, setNuevaFecha] = useState(hoyISO);
+  const [nuevoEfectivo, setNuevoEfectivo] = useState("");
+  const [nuevoDebito, setNuevoDebito] = useState("");
+  const [nuevoComestibles, setNuevoComestibles] = useState("");
 
   async function cargar() {
     setCargando(true);
@@ -70,6 +83,7 @@ export default function ResumenPage() {
     setEditando(c.fecha);
     setEditEfectivo(String(c.efectivo));
     setEditDebito(String(c.debito));
+    setEditComestibles(String(c.comestibles));
   }
 
   function cancelarEdicion() {
@@ -86,10 +100,43 @@ export default function ResumenPage() {
           fecha,
           efectivo: Number(editEfectivo) || 0,
           debito: Number(editDebito) || 0,
+          comestibles: Number(editComestibles) || 0,
         }),
       });
       if (res.ok) {
         setEditando(null);
+        await cargar();
+      }
+    } finally {
+      setOcupado(false);
+    }
+  }
+
+  const yaExiste = cierres.some((c) => c.fecha === nuevaFecha);
+
+  async function agregarCierre(e: React.FormEvent) {
+    e.preventDefault();
+    if (!nuevaFecha) return;
+    if (yaExiste && !confirm(`Ya hay un cierre del ${formatearFecha(nuevaFecha)}. ¿Reemplazarlo?`)) {
+      return;
+    }
+
+    setOcupado(true);
+    try {
+      const res = await fetch("/api/cierres", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fecha: nuevaFecha,
+          efectivo: Number(nuevoEfectivo) || 0,
+          debito: Number(nuevoDebito) || 0,
+          comestibles: Number(nuevoComestibles) || 0,
+        }),
+      });
+      if (res.ok) {
+        setNuevoEfectivo("");
+        setNuevoDebito("");
+        setNuevoComestibles("");
         await cargar();
       }
     } finally {
@@ -113,12 +160,16 @@ export default function ResumenPage() {
   }
 
   const porMes = cierres.reduce<
-    Record<string, { efectivo: number; debito: number; salidas: number; dias: number }>
+    Record<
+      string,
+      { efectivo: number; debito: number; comestibles: number; salidas: number; dias: number }
+    >
   >((acc, c) => {
     const mes = c.fecha.slice(0, 7);
-    if (!acc[mes]) acc[mes] = { efectivo: 0, debito: 0, salidas: 0, dias: 0 };
+    if (!acc[mes]) acc[mes] = { efectivo: 0, debito: 0, comestibles: 0, salidas: 0, dias: 0 };
     acc[mes].efectivo += c.efectivo;
     acc[mes].debito += c.debito;
+    acc[mes].comestibles += c.comestibles;
     acc[mes].salidas += totalSalidas(c);
     acc[mes].dias += 1;
     return acc;
@@ -156,7 +207,7 @@ export default function ResumenPage() {
       <section className={styles.section}>
         <h2>Por mes</h2>
         <p className={styles.nota}>
-          Venta = efectivo + débito + salidas de caja.
+          Venta = efectivo + débito + comestibles + salidas de caja.
         </p>
         <div className={styles.tableWrap}>
           <table className={styles.table}>
@@ -165,6 +216,7 @@ export default function ResumenPage() {
                 <th>Mes</th>
                 <th>Efectivo</th>
                 <th>Débito</th>
+                <th>Comestibles</th>
                 <th>Salidas</th>
                 <th>Venta</th>
                 <th>Días</th>
@@ -178,9 +230,10 @@ export default function ResumenPage() {
                     <td>{mesLabel(mes + "-01")}</td>
                     <td>{formatearPesos(d.efectivo)}</td>
                     <td>{formatearPesos(d.debito)}</td>
+                    <td>{formatearPesos(d.comestibles)}</td>
                     <td className={styles.salida}>{formatearPesos(d.salidas)}</td>
                     <td className={styles.total}>
-                      {formatearPesos(d.efectivo + d.debito + d.salidas)}
+                      {formatearPesos(d.efectivo + d.debito + d.comestibles + d.salidas)}
                     </td>
                     <td>{d.dias}</td>
                   </tr>
@@ -193,6 +246,68 @@ export default function ResumenPage() {
 
       <section className={styles.section}>
         <h2>Por día</h2>
+
+        <form onSubmit={agregarCierre} className={styles.alta}>
+          <p className={styles.altaTitulo}>Agregar un cierre que quedó sin cargar</p>
+          <div className={styles.altaCampos}>
+            <label className={styles.altaLabel}>
+              Fecha
+              <input
+                type="date"
+                value={nuevaFecha}
+                max={hoyISO()}
+                onChange={(e) => setNuevaFecha(e.target.value)}
+                className={styles.altaInput}
+                required
+              />
+            </label>
+            <label className={styles.altaLabel}>
+              Efectivo
+              <input
+                type="number"
+                inputMode="decimal"
+                placeholder="0"
+                value={nuevoEfectivo}
+                onChange={(e) => setNuevoEfectivo(e.target.value)}
+                className={styles.altaInput}
+                autoComplete="off"
+              />
+            </label>
+            <label className={styles.altaLabel}>
+              Débito
+              <input
+                type="number"
+                inputMode="decimal"
+                placeholder="0"
+                value={nuevoDebito}
+                onChange={(e) => setNuevoDebito(e.target.value)}
+                className={styles.altaInput}
+                autoComplete="off"
+              />
+            </label>
+            <label className={styles.altaLabel}>
+              Comestibles
+              <input
+                type="number"
+                inputMode="decimal"
+                placeholder="0"
+                value={nuevoComestibles}
+                onChange={(e) => setNuevoComestibles(e.target.value)}
+                className={styles.altaInput}
+                autoComplete="off"
+              />
+            </label>
+            <button type="submit" className={styles.btn} disabled={ocupado}>
+              Agregar
+            </button>
+          </div>
+          {yaExiste && (
+            <p className={styles.altaAviso}>
+              Ya hay un cierre del {formatearFecha(nuevaFecha)}: se va a reemplazar.
+            </p>
+          )}
+        </form>
+
         <div className={styles.tableWrap}>
           <table className={styles.table}>
             <thead>
@@ -200,6 +315,7 @@ export default function ResumenPage() {
                 <th>Fecha</th>
                 <th>Efectivo</th>
                 <th>Débito</th>
+                <th>Comestibles</th>
                 <th>Salidas</th>
                 <th>Venta</th>
                 <th>Acciones</th>
@@ -230,6 +346,16 @@ export default function ResumenPage() {
                         autoComplete="off"
                       />
                     </td>
+                    <td>
+                      <input
+                        type="number"
+                        inputMode="decimal"
+                        value={editComestibles}
+                        onChange={(e) => setEditComestibles(e.target.value)}
+                        className={styles.editInput}
+                        autoComplete="off"
+                      />
+                    </td>
                     <td className={styles.salida} title={detalleSalidas(c)}>
                       {formatearPesos(totalSalidas(c))}
                     </td>
@@ -237,6 +363,7 @@ export default function ResumenPage() {
                       {formatearPesos(
                         (Number(editEfectivo) || 0) +
                           (Number(editDebito) || 0) +
+                          (Number(editComestibles) || 0) +
                           totalSalidas(c)
                       )}
                     </td>
@@ -264,6 +391,7 @@ export default function ResumenPage() {
                     <td>{formatearFecha(c.fecha)}</td>
                     <td>{formatearPesos(c.efectivo)}</td>
                     <td>{formatearPesos(c.debito)}</td>
+                    <td>{formatearPesos(c.comestibles)}</td>
                     <td className={styles.salida} title={detalleSalidas(c)}>
                       {formatearPesos(totalSalidas(c))}
                       {(c.salidas ?? []).length > 0 && (

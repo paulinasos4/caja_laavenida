@@ -135,6 +135,57 @@
   color: #c0392b;
 }
 
+.alta {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.altaTitulo {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #444;
+  margin-bottom: 12px;
+}
+
+.altaCampos {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.altaLabel {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #666;
+}
+
+.altaInput {
+  width: 130px;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 0.9375rem;
+}
+
+.alta .btn {
+  padding: 9px 16px;
+}
+
+.altaAviso {
+  margin-top: 10px;
+  font-size: 0.8125rem;
+  color: #c0392b;
+}
+
 .editInput {
   width: 100px;
   padding: 6px 8px;

@@ -22,7 +22,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { fecha, efectivo, debito, salidas } = body;
+    const { fecha, efectivo, debito, comestibles, salidas } = body;
 
     if (!fecha || efectivo === undefined || debito === undefined) {
       return NextResponse.json({ error: "Faltan datos" }, { status: 400 });
@@ -32,6 +32,7 @@ export async function POST(request: NextRequest) {
       fecha,
       efectivo: Number(efectivo),
       debito: Number(debito),
+      comestibles: Number(comestibles) || 0,
       salidas: parseSalidas(salidas),
     });
 

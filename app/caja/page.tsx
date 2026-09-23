@@ -16,6 +16,7 @@ export default function CargarPage() {
   const [fecha] = useState(hoyISO);
   const [efectivo, setEfectivo] = useState("");
   const [debito, setDebito] = useState("");
+  const [comestibles, setComestibles] = useState("");
   const [salidas, setSalidas] = useState<SalidaForm[]>([]);
   const [guardando, setGuardando] = useState(false);
   const [guardado, setGuardado] = useState(false);
@@ -35,6 +36,7 @@ export default function CargarPage() {
 
         setEfectivo((v) => (v === "" ? String(hoy.efectivo) : v));
         setDebito((v) => (v === "" ? String(hoy.debito) : v));
+        setComestibles((v) => (v === "" ? String(hoy.comestibles ?? 0) : v));
         setSalidas((v) =>
           v.length > 0
             ? v
@@ -83,6 +85,7 @@ export default function CargarPage() {
           fecha,
           efectivo: Number(efectivo) || 0,
           debito: Number(debito) || 0,
+          comestibles: Number(comestibles) || 0,
           salidas: salidas
             .map((s) => ({ motivo: s.motivo, monto: Number(s.monto) || 0 }))
             .filter((s) => s.monto > 0),
@@ -132,6 +135,22 @@ export default function CargarPage() {
                 onChange={(e) => {
                   setGuardado(false);
                   setDebito(e.target.value);
+                }}
+                className={styles.input}
+                autoComplete="off"
+              />
+            </label>
+
+            <label className={styles.label}>
+              Comestibles
+              <input
+                type="number"
+                inputMode="decimal"
+                placeholder="0"
+                value={comestibles}
+                onChange={(e) => {
+                  setGuardado(false);
+                  setComestibles(e.target.value);
                 }}
                 className={styles.input}
                 autoComplete="off"
